@@ -104,9 +104,6 @@ class Background(Sprite):
             renderer.draw(self.REGISTRY, layer['source_rect_left'], layer['view_rect_left'])
             renderer.draw(self.REGISTRY, layer['source_rect_right'], layer['view_rect_right'])
 
-    def registry(self):
-        return self.REGISTRY
-
 
 class Explosion(Sprite):
     def __init__(self):
@@ -242,9 +239,6 @@ class Craft(Sprite):
         renderer.draw(self.REGISTRY, self.frame.src, self.frame.collision)
         for bullet in self.bullets:
             bullet.draw(renderer)
-
-    def registry(self) -> int:
-        return self.REGISTRY
 
     def is_alive(self) -> bool:
         return self.alive

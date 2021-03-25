@@ -8,9 +8,9 @@ class PlayState(GameState):
     def __init__(self, renderer: Renderer):
         self.__renderer: Renderer = renderer
         self.__background = Background()
-        self.__renderer.register_image(self.__background.registry(), "assets/background.png")
+        self.__renderer.register_image(Background.REGISTRY, "assets/background.png")
         self.__craft = Craft(renderer.bb_size)
-        self.__renderer.register_image(self.__craft.registry(), "assets/pxplayer.png")
+        self.__renderer.register_image(Craft.REGISTRY, "assets/pxplayer.png")
         self.__renderer.register_image(Bullet.REGISTRY, "assets/bullets.png")
 
     def update(self, time: int, input: Input) -> None:
