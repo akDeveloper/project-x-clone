@@ -194,6 +194,8 @@ class Bullet(Sprite):
         self.alive = False
 
     def collide(self, other: Sprite) -> bool:
+        if self.is_alive() is False:
+            return False
         return self.rect.colliderect(other.rect)
 
 
@@ -204,6 +206,7 @@ class Craft(Sprite):
 
     def __init__(self, boundary: tuple):
         super().__init__()
+        self.explosion: Explosion = Explosion()
         self.boundary = boundary
         self.speed: int = 2
         self.action: int = 0
@@ -239,6 +242,10 @@ class Craft(Sprite):
         self.input = input
 
     def update(self, time: int) -> None:
+        if self.is_alive() is False:
+            self.explosion.update(time)
+            self.update_bullets(time)
+            return
         ''' Update velocity according to user input '''
         vel = Vector2(0, 0)
         dir = self.input.get_direction()
@@ -283,6 +290,9 @@ class Craft(Sprite):
         buttons = self.input.get_buttons()
         if buttons.is_pressed(State.X):
             self.shoot(time)
+        self.update_bullets(time)
+
+    def update_bullets(self, time: int):
         for bullet in self.bullets:
             bullet.update(time)
             if bullet.rect.left > self.boundary[0] or bullet.is_alive() is False:
@@ -298,7 +308,14 @@ class Craft(Sprite):
         tmp.rect.move_ip(self.rect.left + 22, self.rect.top + 12)
 
     def draw(self, renderer: Renderer) -> None:
+        if self.is_alive() is False:
+            self.explosion.draw(renderer)
+            self.draw_bullets(renderer)
+            return
         renderer.draw(self.REGISTRY, self.frame.src, self.frame.collision)
+        self.draw_bullets(renderer)
+
+    def draw_bullets(self, renderer: Renderer):
         for bullet in self.bullets:
             bullet.draw(renderer)
 
@@ -307,6 +324,7 @@ class Craft(Sprite):
 
     def destroy(self) -> None:
         self.alive = False
+        self.explosion.rect.center = self.rect.center
 
     def collide(self, other: Sprite) -> bool:
         for b in self.bullets:
@@ -322,7 +340,7 @@ class Asteroid(Sprite):
     def __init__(self, boundary: tuple):
         super().__init__()
         self.alive = True
-        self.life = 3
+        self.life = 1
         self.explosion = Explosion()
         self.speed = randint(1, 3)
         self.variants: list = []
@@ -334,7 +352,11 @@ class Asteroid(Sprite):
         self.variants.append(Rect(208, 282, 109, 77))
         skin = randint(0, 4)
         self.src_rect = self.variants[skin]
-        self.rect = Rect(boundary[0], randint(0, boundary[1] - self.src_rect.height), self.src_rect.width, self.src_rect.height)
+        self.rect = Rect(
+            boundary[0],
+            randint(0, boundary[1] - self.src_rect.height),
+            self.src_rect.width,
+            self.src_rect.height)
 
     def update(self, time: int) -> None:
         if self.is_alive() is False:
@@ -358,4 +380,6 @@ class Asteroid(Sprite):
             self.explosion.rect.center = self.rect.center
 
     def collide(self, other: Sprite) -> bool:
+        if self.is_alive() is False:
+            return False
         return self.rect.colliderect(other.rect)
