@@ -14,7 +14,7 @@ class Action(object):
         self.index: int = 0
         self.frames: list = frames
 
-    def next_frame(self) -> int:
+    def next_frame(self) -> Frame:
         frame: Frame = self.frames[self.index]
         if self.tick > frame.delay:
             self.tick = 0

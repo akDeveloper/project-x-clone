@@ -4,6 +4,7 @@ from renderer import Renderer
 from action import Frame, Action
 from controls import Input, State
 from pygame.math import Vector2
+from random import randint
 
 
 class Background(Sprite):
@@ -106,8 +107,66 @@ class Background(Sprite):
 
 
 class Explosion(Sprite):
+    REGISTRY = 4
+
     def __init__(self):
         super().__init__()
+        self.alive = True
+        self.rect = Rect(0, 0, 32, 32)
+        self.frame: Frame = None
+        self.frames: list = []
+        for i in range(17):
+            if i < 10:
+                self.frames.append(
+                    Frame(
+                        Rect(0, 0, 32, 32),
+                        Rect(32 * i, 0, 32, 32),
+                        2
+                    )
+                )
+            else:
+                self.frames.append(
+                    Frame(
+                        Rect(0, 0, 32, 32),
+                        Rect(32 * (i - 10), 32, 32, 32),
+                        2
+                    )
+                )
+        action_frames: list = []
+        action_frames.append(self.frames[1])
+        action_frames.append(self.frames[2])
+        action_frames.append(self.frames[3])
+        action_frames.append(self.frames[4])
+        action_frames.append(self.frames[5])
+        action_frames.append(self.frames[6])
+        action_frames.append(self.frames[7])
+        action_frames.append(self.frames[8])
+        action_frames.append(self.frames[9])
+        action_frames.append(self.frames[0])
+        action_frames.append(self.frames[11])
+        action_frames.append(self.frames[12])
+        action_frames.append(self.frames[13])
+        action_frames.append(self.frames[14])
+        action_frames.append(self.frames[15])
+        action_frames.append(self.frames[16])
+        self.action = Action(action_frames)
+        self.frame = action_frames[0]
+
+    def update(self, time: int):
+        self.frame = self.action.next_frame()
+        self.frame.collision.topleft = self.rect.topleft
+
+    def draw(self, renderer: Renderer) -> None:
+        renderer.draw(self.REGISTRY, self.frame.src, self.frame.collision)
+
+    def is_alive(self) -> bool:
+        return self.alive
+
+    def destroy(self) -> None:
+        self.alive = False
+
+    def collide(self, other: Sprite) -> bool:
+        return False
 
 
 class Bullet(Sprite):
@@ -133,6 +192,9 @@ class Bullet(Sprite):
 
     def destroy(self) -> None:
         self.alive = False
+
+    def collide(self, other: Sprite) -> bool:
+        return self.rect.colliderect(other.rect)
 
 
 class Craft(Sprite):
@@ -245,3 +307,55 @@ class Craft(Sprite):
 
     def destroy(self) -> None:
         self.alive = False
+
+    def collide(self, other: Sprite) -> bool:
+        for b in self.bullets:
+            if other.is_alive() and b.collide(other):
+                b.destroy()
+                return True
+        return False
+
+
+class Asteroid(Sprite):
+    REGISTRY = 3
+
+    def __init__(self, boundary: tuple):
+        super().__init__()
+        self.alive = True
+        self.life = 3
+        self.explosion = Explosion()
+        self.speed = randint(1, 3)
+        self.variants: list = []
+        self.variants.append(Rect(145, 130, 30, 36))
+        self.variants.append(Rect(146, 170, 30, 29))
+        self.variants.append(Rect(193, 228, 47, 51))
+        self.variants.append(Rect(240, 225, 48, 53))
+        self.variants.append(Rect(147, 288, 61, 72))
+        self.variants.append(Rect(208, 282, 109, 77))
+        skin = randint(0, 4)
+        self.src_rect = self.variants[skin]
+        self.rect = Rect(boundary[0], randint(0, boundary[1] - self.src_rect.height), self.src_rect.width, self.src_rect.height)
+
+    def update(self, time: int) -> None:
+        if self.is_alive() is False:
+            self.explosion.update(time)
+            return
+        self.rect.left -= self.speed
+
+    def draw(self, renderer: Renderer) -> None:
+        if self.is_alive() is False:
+            self.explosion.draw(renderer)
+            return
+        renderer.draw(self.REGISTRY, self.src_rect, self.rect)
+
+    def is_alive(self) -> bool:
+        return self.alive
+
+    def destroy(self) -> None:
+        self.life -= 1
+        if self.life <= 0:
+            self.alive = False
+            self.explosion.rect.center = self.rect.center
+
+    def collide(self, other: Sprite) -> bool:
+        return self.rect.colliderect(other.rect)
