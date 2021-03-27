@@ -21,7 +21,7 @@ class GameState(object):
 
 
 class Engine():
-    FPS = 50
+    FPS = 30
 
     def __init__(self, renderer: Renderer):
         self.__renderer: Renderer = renderer

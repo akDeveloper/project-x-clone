@@ -15,6 +15,7 @@ class Background(Sprite):
     def __init__(self):
         super().__init__()
         self.input: Input = None
+        ''' Setup layers for scrolling '''
         self.layers = [
             {
                 "y": 2048,
@@ -114,6 +115,7 @@ class Explosion(Sprite):
         self.alive = True
         self.rect = Rect(0, 0, 32, 32)
         self.frame: Frame = None
+        ''' Create frames '''
         self.frames: list = []
         for i in range(17):
             if i < 10:
@@ -121,7 +123,7 @@ class Explosion(Sprite):
                     Frame(
                         Rect(0, 0, 32, 32),
                         Rect(32 * i, 0, 32, 32),
-                        2
+                        1
                     )
                 )
             else:
@@ -129,9 +131,10 @@ class Explosion(Sprite):
                     Frame(
                         Rect(0, 0, 32, 32),
                         Rect(32 * (i - 10), 32, 32, 32),
-                        2
+                        1
                     )
                 )
+        ''' Setup actions '''
         action_frames: list = []
         action_frames.append(self.frames[1])
         action_frames.append(self.frames[2])
@@ -177,7 +180,7 @@ class Bullet(Sprite):
     def __init__(self):
         super().__init__()
         self.alive: bool = True
-        self.speed: int = 3
+        self.speed: int = 5
         self.rect: Rect = Rect(0, 0, self.WIDTH, self.HEIGHT)
         self.src_rect: Rect = Rect(0, 5, self.WIDTH, self.HEIGHT)
 
@@ -208,14 +211,14 @@ class Craft(Sprite):
         super().__init__()
         self.explosion: Explosion = Explosion()
         self.boundary = boundary
-        self.speed: int = 2
+        self.speed: int = 3
         self.action: int = 0
         self.alive: bool = True
         self.rect: Rect = Rect(0, 0, self.WIDTH, 14)
         self.bullets: list = []
         self.bullet_tick: int = 0
         self.frame: Frame = None
-        ''' Create frames '''
+        ''' Setup frames '''
         self.frames: list = []
         self.actions: list = []
         off_x = 0
@@ -228,10 +231,11 @@ class Craft(Sprite):
                 Frame(
                     Rect(0, 0, self.WIDTH, 14),
                     Rect(off_x * self.WIDTH, off_y * self.HEIGHT, self.WIDTH, self.HEIGHT),
-                    3
+                    1
                 )
             )
             off_x += 1
+        ''' Setup actions '''
         self.actions.append(Action([self.frames[0]]))  # Flying
         self.actions.append(Action([self.frames[1], self.frames[2]]))  # Up
         self.actions.append(Action([self.frames[3], self.frames[4]]))  # Down
@@ -299,7 +303,7 @@ class Craft(Sprite):
                 self.bullets.remove(bullet)
 
     def shoot(self, time: int) -> None:
-        if self.bullet_tick < 20 and len(self.bullets) > 0:
+        if self.bullet_tick < 10 and len(self.bullets) > 0:
             self.bullet_tick += 1
             return
         self.bullet_tick = 0
