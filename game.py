@@ -47,7 +47,7 @@ class GetReadyState(GameState):
         self.renderer.draw(Bullet.REGISTRY, Rect(0, 64, 144, 32), Rect(100, 100, 144, 32))
 
     def state(self) -> GameState:
-        if self.ticks < 200:
+        if self.ticks < 100:
             return self
         return PlayState(self)
 

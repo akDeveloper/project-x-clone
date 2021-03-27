@@ -121,7 +121,7 @@ class Explosion(Sprite):
             if i < 10:
                 self.frames.append(
                     Frame(
-                        Rect(0, 0, 32, 32),
+                        self.rect,
                         Rect(32 * i, 0, 32, 32),
                         1
                     )
@@ -129,7 +129,7 @@ class Explosion(Sprite):
             else:
                 self.frames.append(
                     Frame(
-                        Rect(0, 0, 32, 32),
+                        self.rect,
                         Rect(32 * (i - 10), 32, 32, 32),
                         1
                     )
@@ -157,10 +157,10 @@ class Explosion(Sprite):
 
     def update(self, time: int):
         self.frame = self.action.next_frame()
-        self.frame.collision.topleft = self.rect.topleft
+        self.frame.collision.center = self.rect.center
 
     def draw(self, renderer: Renderer) -> None:
-        renderer.draw(self.REGISTRY, self.frame.src, self.frame.collision)
+        renderer.draw(self.REGISTRY, self.frame.src, self.rect)
 
     def is_alive(self) -> bool:
         return self.alive
@@ -180,7 +180,7 @@ class Bullet(Sprite):
     def __init__(self):
         super().__init__()
         self.alive: bool = True
-        self.speed: int = 5
+        self.speed: int = 8
         self.rect: Rect = Rect(0, 0, self.WIDTH, self.HEIGHT)
         self.src_rect: Rect = Rect(0, 5, self.WIDTH, self.HEIGHT)
 
@@ -211,7 +211,7 @@ class Craft(Sprite):
         super().__init__()
         self.explosion: Explosion = Explosion()
         self.boundary = boundary
-        self.speed: int = 3
+        self.speed: int = 4
         self.action: int = 0
         self.alive: bool = True
         self.rect: Rect = Rect(0, 0, self.WIDTH, 14)
@@ -303,7 +303,8 @@ class Craft(Sprite):
                 self.bullets.remove(bullet)
 
     def shoot(self, time: int) -> None:
-        if self.bullet_tick < 10 and len(self.bullets) > 0:
+        ''' Add delay for each bullet shooting '''
+        if self.bullet_tick < 5 and len(self.bullets) > 0:
             self.bullet_tick += 1
             return
         self.bullet_tick = 0
@@ -346,7 +347,7 @@ class Asteroid(Sprite):
         self.alive = True
         self.life = 1
         self.explosion = Explosion()
-        self.speed = randint(1, 3)
+        self.speed = randint(3, 5)
         self.variants: list = []
         self.variants.append(Rect(145, 130, 30, 36))
         self.variants.append(Rect(146, 170, 30, 29))

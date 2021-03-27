@@ -185,7 +185,7 @@ class Gamepad(Input):
         jx = self.joystick.get_axis(0)
         jy = self.joystick.get_axis(1)
         x = int(round(jx, 0))
-        y = int(round(jy, 0)) * -1
+        y = int(round(jy, 0))
         self.direction.update(x, y)
 
         buttons = self.joystick.get_numbuttons()
