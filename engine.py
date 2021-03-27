@@ -4,6 +4,7 @@ from renderer import Renderer
 from pygame.time import Clock
 from pygame.event import get, Event
 from controls import Controller, Input
+from pygame import USEREVENT
 
 
 class GameState(object):
@@ -19,14 +20,21 @@ class GameState(object):
     def state(self) -> 'GameState':
         pass
 
+    def on_event(self, e) -> None:
+        pass
+
 
 class Engine():
     FPS = 30
+    GAME_EVENT = USEREVENT + 1
+    CRAFT_SHOOTED = 0
+    ENEMY_DESTROYED = 1
 
     def __init__(self, renderer: Renderer):
         self.__renderer: Renderer = renderer
         self.__run = True
         self.controller = Controller()
+        self.score = 0
 
     def on_event(self, e: Event) -> None:
         if e.type == QUIT:
@@ -55,6 +63,9 @@ class Engine():
 
         while(self.__run is True):
             for event in get():
+                if event.type == self.GAME_EVENT:
+                    state.on_event(event)
+                    continue
                 self.on_event(event)
             self.controller.on_event()
             state.update(clock.get_time(), self.controller)

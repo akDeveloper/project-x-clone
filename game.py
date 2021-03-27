@@ -1,14 +1,28 @@
-from engine import GameState
+from engine import GameState, Engine
 from renderer import Renderer
 from sprites import Background, Craft, Bullet, Asteroid, Explosion
 from controls import Input
 from pygame import Rect
+from pygame.event import Event
 
 
-class LoadState(GameState):
+class BaseState(GameState):
+    def __init__(self, score: int = 0):
+        self.score = score
+
+    def on_event(self, e: Event) -> None:
+        if e.gtype == Engine.CRAFT_SHOOTED:
+            pass  # Play sound
+        elif e.gtype == Engine.ENEMY_DESTROYED:
+            ''' play sound, increase score '''
+            self.score += e.bonus
+
+
+class LoadState(BaseState):
     LEVEL_1_SPRITES = 3
 
     def __init__(self, renderer: Renderer):
+        super().__init__()
         self.renderer: Renderer = renderer
         self.renderer.register_image(Background.REGISTRY, "assets/background.png")
         self.renderer.register_image(Craft.REGISTRY, "assets/pxplayer.png")
@@ -28,8 +42,9 @@ class LoadState(GameState):
         return GetReadyState(self)
 
 
-class GetReadyState(GameState):
-    def __init__(self, state: GameState):
+class GetReadyState(BaseState):
+    def __init__(self, state: GameState, score: int = 0):
+        super().__init__(score)
         self.ticks = 0
         self.renderer: Renderer = state.renderer
         self.background: Background = state.background
@@ -49,11 +64,12 @@ class GetReadyState(GameState):
     def state(self) -> GameState:
         if self.ticks < 100:
             return self
-        return PlayState(self)
+        return PlayState(self, self.score)
 
 
-class PlayState(GameState):
-    def __init__(self, state: GetReadyState):
+class PlayState(BaseState):
+    def __init__(self, state: GetReadyState, score: int):
+        super().__init__()
         self.renderer: Renderer = state.renderer
         self.background: Background = state.background
         self.craft: Craft = state.craft
@@ -77,7 +93,7 @@ class PlayState(GameState):
     def state(self) -> GameState:
         if self.craft.is_alive() is False:
             if self.__dead_tick > 100:
-                return GetReadyState(self)
+                return GetReadyState(self, self.score)
             self.__dead_tick += 1
         return self
 

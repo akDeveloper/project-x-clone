@@ -5,6 +5,8 @@ from action import Frame, Action
 from controls import Input, State
 from pygame.math import Vector2
 from random import randint
+from engine import Engine
+from pygame.event import post, Event
 
 
 class Background(Sprite):
@@ -311,6 +313,7 @@ class Craft(Sprite):
         tmp = Bullet()
         self.bullets.append(tmp)
         tmp.rect.move_ip(self.rect.left + 22, self.rect.top + 12)
+        post(Event(Engine.GAME_EVENT, gtype=Engine.CRAFT_SHOOTED))
 
     def draw(self, renderer: Renderer) -> None:
         if self.is_alive() is False:
@@ -348,6 +351,7 @@ class Asteroid(Sprite):
         self.life = 1
         self.explosion = Explosion()
         self.speed = randint(3, 5)
+        self.bonus = self.speed
         self.variants: list = []
         self.variants.append(Rect(145, 130, 30, 36))
         self.variants.append(Rect(146, 170, 30, 29))
@@ -383,6 +387,7 @@ class Asteroid(Sprite):
         if self.life <= 0:
             self.alive = False
             self.explosion.rect.center = self.rect.center
+            post(Event(Engine.GAME_EVENT, gtype=Engine.ENEMY_DESTROYED, bonus=self.bonus))
 
     def collide(self, other: Sprite) -> bool:
         if self.is_alive() is False:
