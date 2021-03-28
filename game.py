@@ -1,6 +1,6 @@
 from engine import GameState, Engine
 from renderer import Renderer
-from sprites import Background, Craft, Bullet, Asteroid, Explosion
+from sprites import Background, Craft, Bullet, Asteroid, Explosion, FontSprite
 from controls import Input
 from pygame import Rect
 from pygame.event import Event
@@ -8,7 +8,8 @@ from pygame.event import Event
 
 class BaseState(GameState):
     def __init__(self, score: int = 0):
-        self.score = score
+        self.score: int = score
+        self.font: FontSprite = FontSprite()
 
     def on_event(self, e: Event) -> None:
         if e.gtype == Engine.CRAFT_SHOOTED:
@@ -16,6 +17,12 @@ class BaseState(GameState):
         elif e.gtype == Engine.ENEMY_DESTROYED:
             ''' play sound, increase score '''
             self.score += e.bonus
+
+    def draw_score(self, renderer: Renderer) -> None:
+        word = str(self.score)
+        word = word.zfill(8)
+        self.font.display(word)
+        self.font.draw(renderer)
 
 
 class LoadState(BaseState):
@@ -29,6 +36,7 @@ class LoadState(BaseState):
         self.renderer.register_image(Bullet.REGISTRY, "assets/bullets.png")
         self.renderer.register_image(self.LEVEL_1_SPRITES, "assets/level1_sprites.png")
         self.renderer.register_image(Explosion.REGISTRY, "assets/explosion.png")
+        self.renderer.register_image(FontSprite.REGISTRY, "assets/font.png")
         self.background: Background = Background()
         self.craft: Craft = Craft(renderer.bb_size)
 
@@ -60,6 +68,7 @@ class GetReadyState(BaseState):
         self.background.draw(renderer)
         self.craft.draw(renderer)
         self.renderer.draw(Bullet.REGISTRY, Rect(0, 64, 144, 32), Rect(100, 100, 144, 32))
+        self.draw_score(renderer)
 
     def state(self) -> GameState:
         if self.ticks < 100:
@@ -89,6 +98,7 @@ class PlayState(BaseState):
         self.background.draw(renderer)
         self.draw_asteroids(renderer)
         self.craft.draw(renderer)
+        self.draw_score(renderer)
 
     def state(self) -> GameState:
         if self.craft.is_alive() is False:

@@ -31,7 +31,7 @@ class Background(Sprite):
             {
                 "y": 768,
                 "scroll_x": 0,
-                "scroll_step": 0.3,
+                "scroll_step": 0.5,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -40,7 +40,7 @@ class Background(Sprite):
             {
                 "y": 1792,
                 "scroll_x": 0,
-                "scroll_step": 0.3,
+                "scroll_step": 0.5,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -49,7 +49,7 @@ class Background(Sprite):
             {
                 "y": 1536,
                 "scroll_x": 0,
-                "scroll_step": 0.3,
+                "scroll_step": 0.5,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -58,7 +58,7 @@ class Background(Sprite):
             {
                 "y": 1024,
                 "scroll_x": 0,
-                "scroll_step": 0.5,
+                "scroll_step": 1,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -67,7 +67,7 @@ class Background(Sprite):
             {
                 "y": 1280,
                 "scroll_x": 0,
-                "scroll_step": 0.5,
+                "scroll_step": 1,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -76,7 +76,7 @@ class Background(Sprite):
             {
                 "y": 512,
                 "scroll_x": 0,
-                "scroll_step": 0.5,
+                "scroll_step": 1,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -85,7 +85,7 @@ class Background(Sprite):
             {
                 "y": 256,
                 "scroll_x": 0,
-                "scroll_step": 0.5,
+                "scroll_step": 1,
                 "view_rect_left": None,
                 "view_rect_right": None,
                 "source_rect_left": None,
@@ -393,3 +393,38 @@ class Asteroid(Sprite):
         if self.is_alive() is False:
             return False
         return self.rect.colliderect(other.rect)
+
+
+class FontSprite(Sprite):
+    REGISTRY = 5
+    WIDTH = 12
+    HEIGHT = 12
+    CHAR_PER_ROW = 29
+
+    def __init__(self):
+        super().__init__()
+        self.letters: list = []
+        '''
+        self.chars = [' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.',
+                      '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=',
+                      '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+                      'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[',
+                      '\\', ']', '^', '_']
+        '''
+        self.chars = ['!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>',
+                      '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\',
+                      ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+
+    def display(self, text: str) -> None:
+        self.letters = [char for char in text]
+
+    def draw(self, renderer: Renderer) -> None:
+        cursor: int = 120
+        for char in self.letters:
+            n = self.chars.index(char)
+            y = (n // self.CHAR_PER_ROW) * self.HEIGHT
+            x = (n % (self.CHAR_PER_ROW + 1)) * self.WIDTH
+            src = Rect(x, y, self.WIDTH, self.HEIGHT)
+            dest = Rect(cursor, 10, self.WIDTH, self.HEIGHT)
+            renderer.draw(self.REGISTRY, src, dest)
+            cursor += 8
