@@ -240,14 +240,42 @@ class Bullet(GameObject):
         super().__init__()
         self.alive: bool = True
         self.speed: int = 8
-        self.rect: Rect = Rect(0, 0, self.WIDTH, self.HEIGHT)
-        self.src_rect: Rect = Rect(0, 5, self.WIDTH, self.HEIGHT)
+        self.frame: Frame = None
+        self.frames: list = []
+        self.init_frames()
+        self.action: Action = Action(self.frames)
+        self.rect: Rect = self.frames[0].collision
+        self.frame = self.frames[0]
+
+    def init_frames(self):
+        self.frames.append(
+            Frame(Rect(0, 0, 11, 6), Rect(0, 5, 11, 6), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 11, 8), Rect(16, 4, 11, 8), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 11, 10), Rect(32, 3, 11, 10), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 11, 12), Rect(48, 2, 11, 12), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 11, 14), Rect(64, 1, 11, 14), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 11, 16), Rect(80, 0, 11, 16), 1)
+        )
 
     def update(self, time: int) -> None:
         self.rect.left += self.speed
+        self.frame = self.action.next_frame()
+        self.frame.collision.topleft = self.rect.topleft
+        index = self.frames.index(self.frame)
+        self.frame.collision.top -= index
 
     def draw(self, renderer: Renderer) -> None:
-        renderer.draw(SpriteRegistry.BULLET, self.src_rect, self.rect)
+        renderer.draw(SpriteRegistry.BULLET, self.frame.src, self.frame.collision)
 
     def is_alive(self) -> bool:
         return self.alive
@@ -259,6 +287,47 @@ class Bullet(GameObject):
         if self.is_alive() is False:
             return False
         return self.rect.colliderect(other.rect)
+
+    def align(self, src: Rect) -> None:
+        self.rect.midleft = src.center
+
+
+class DiagUpBullet(Bullet):
+    def __init__(self):
+        super().__init__()
+
+    def init_frames(self):
+        self.frames.append(
+            Frame(Rect(0, 0, 10, 10), Rect(275, 35, 10, 10), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 15, 14), Rect(289, 33, 15, 14), 1)
+        )
+
+    def update(self, time: int) -> None:
+        self.rect.left += self.speed
+        self.rect.top -= self.speed
+        self.frame = self.action.next_frame()
+        self.frame.collision.topleft = self.rect.topleft
+
+
+class DiagDownBullet(Bullet):
+    def __init__(self):
+        super().__init__()
+
+    def init_frames(self):
+        self.frames.append(
+            Frame(Rect(0, 0, 10, 10), Rect(275, 51, 10, 10), 1)
+        )
+        self.frames.append(
+            Frame(Rect(0, 0, 15, 14), Rect(289, 49, 15, 14), 1)
+        )
+
+    def update(self, time: int) -> None:
+        self.rect.left += self.speed
+        self.rect.top += self.speed
+        self.frame = self.action.next_frame()
+        self.frame.collision.topleft = self.rect.topleft
 
 
 class Craft(GameObject):
@@ -274,7 +343,7 @@ class Craft(GameObject):
         self.alive: bool = True
         self.rect: Rect = Rect(0, 0, self.WIDTH, 14)
         self.bullets: list = []
-        self.bullet_tick: int = 0
+        self.shoot_tick: int = 0
         self.frame: Frame = None
         ''' Setup frames '''
         self.frames: list = []
@@ -357,18 +426,20 @@ class Craft(GameObject):
     def update_bullets(self, time: int):
         for bullet in self.bullets:
             bullet.update(time)
-            if bullet.rect.left > self.boundary[0] or bullet.is_alive() is False:
+            if bullet.rect.left > self.boundary[0] or bullet.rect.bottom < 0 \
+                    or bullet.rect.top > self.boundary[1] or bullet.is_alive() is False:
                 self.bullets.remove(bullet)
 
     def shoot(self, time: int) -> None:
         ''' Add delay for each bullet shooting '''
-        if self.bullet_tick < 5 and len(self.bullets) > 0:
-            self.bullet_tick += 1
+        if self.shoot_tick < 5 and len(self.bullets) > 0:
+            self.shoot_tick += 1
             return
-        self.bullet_tick = 0
-        tmp = Bullet()
-        self.bullets.append(tmp)
-        tmp.rect.move_ip(self.rect.left + 22, self.rect.top + 12)
+        self.shoot_tick = 0
+        blts = [Bullet(), DiagUpBullet(), DiagDownBullet()]
+        for tmp in blts:
+            self.bullets.append(tmp)
+            tmp.align(self.rect)
         post(Event(Engine.GAME_EVENT, gtype=Engine.CRAFT_SHOOTED))
 
     def draw(self, renderer: Renderer) -> None:
