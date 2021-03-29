@@ -1,6 +1,17 @@
 from pygame import Surface, Rect, image, init, HWSURFACE, DOUBLEBUF, FULLSCREEN
 from pygame.transform import scale
 from pygame.display import set_mode, update
+from enum import Enum
+
+
+class SpriteRegistry(Enum):
+    BACKGROUND = 0
+    CRAFT = 1
+    BULLET = 2
+    ASTEROID = 3
+    EXPLOSION = 4
+    FONTS = 5
+    POWERUP = 6
 
 
 class Renderer(object):
@@ -42,8 +53,8 @@ class SdlRenderer(Renderer):
     def cls(self) -> None:
         self.__backbuffer.fill((21, 21, 21))
 
-    def register_image(self, name: int, filepath: str) -> None:
-        self.__images.insert(name, image.load(filepath).convert_alpha())
+    def register_image(self, spr: SpriteRegistry, filepath: str) -> None:
+        self.__images.insert(spr.value, image.load(filepath).convert_alpha())
 
-    def draw(self, name: int, src: Rect, dest: Rect) -> None:
-        self.__backbuffer.blit(self.__images[name], dest, src)
+    def draw(self, spr: SpriteRegistry, src: Rect, dest: Rect) -> None:
+        self.__backbuffer.blit(self.__images[spr.value], dest, src)

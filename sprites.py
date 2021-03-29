@@ -1,16 +1,30 @@
 from pygame.sprite import Sprite
 from pygame import Rect
-from renderer import Renderer
+from renderer import Renderer, SpriteRegistry
 from action import Frame, Action
 from controls import Input, State
 from pygame.math import Vector2
 from random import randint
 from engine import Engine
 from pygame.event import post, Event
+from typing import Optional
+
+
+class GameObject(Sprite):
+    def spawn(self) -> None:
+        pass
+
+    def is_alive(self) -> bool:
+        pass
+
+    def collide(self, other: 'GameObject') -> bool:
+        pass
+
+    def draw(self, renderer: Renderer) -> None:
+        pass
 
 
 class Background(Sprite):
-    REGISTRY = 0
     WIDTH = 512
     HEIGHT = 256
 
@@ -105,13 +119,57 @@ class Background(Sprite):
 
     def draw(self, renderer: Renderer) -> None:
         for layer in self.layers:
-            renderer.draw(self.REGISTRY, layer['source_rect_left'], layer['view_rect_left'])
-            renderer.draw(self.REGISTRY, layer['source_rect_right'], layer['view_rect_right'])
+            renderer.draw(SpriteRegistry.BACKGROUND, layer['source_rect_left'], layer['view_rect_left'])
+            renderer.draw(SpriteRegistry.BACKGROUND, layer['source_rect_right'], layer['view_rect_right'])
+
+
+class PowerUp(Sprite):
+    WIDTH = 24
+    HEIGHT = 19
+
+    def __init__(self):
+        super().__init__()
+        self.alive = True
+        self.rect = Rect(0, 0, self.WIDTH, self.HEIGHT)
+        variants: list = []
+        variants.append(Rect(0, 0, self.WIDTH, self.HEIGHT))  # Build power
+        variants.append(Rect(24, 0, self.WIDTH, self.HEIGHT))  # Extra bullet
+        variants.append(Rect(48, 0, self.WIDTH, self.HEIGHT))  # Rockets
+        variants.append(Rect(72, 0, self.WIDTH, self.HEIGHT))  # Shield
+        variants.append(Rect(96, 0, self.WIDTH, self.HEIGHT))  # Extra speed
+        skin = randint(0, 4)
+        self.src = variants[skin]
+        self.vY = -10
+
+    def update(self, time: int) -> None:
+        self.rect.left -= 1
+        if self.vY < 0:
+            self.rect.top -= 1
+            self.vY += 1
+            if self.vY == 0:
+                self.vY = 10
+        elif self.vY > 0:
+            self.rect.top += 1
+            self.vY -= 1
+            if self.vY == 0:
+                self.vY = -10
+
+    def draw(self, renderer: Renderer) -> None:
+        renderer.draw(SpriteRegistry.POWERUP, self.src, self.rect)
+
+    def is_alive(self) -> bool:
+        return self.alive
+
+    def destroy(self) -> None:
+        self.alive = False
+
+    def collide(self, other: Sprite) -> bool:
+        if self.is_alive() is False:
+            return False
+        return self.rect.colliderect(other.rect)
 
 
 class Explosion(Sprite):
-    REGISTRY = 4
-
     def __init__(self):
         super().__init__()
         self.alive = True
@@ -162,7 +220,7 @@ class Explosion(Sprite):
         self.frame.collision.center = self.rect.center
 
     def draw(self, renderer: Renderer) -> None:
-        renderer.draw(self.REGISTRY, self.frame.src, self.rect)
+        renderer.draw(SpriteRegistry.EXPLOSION, self.frame.src, self.rect)
 
     def is_alive(self) -> bool:
         return self.alive
@@ -174,8 +232,7 @@ class Explosion(Sprite):
         return False
 
 
-class Bullet(Sprite):
-    REGISTRY = 2
+class Bullet(GameObject):
     WIDTH = 11
     HEIGHT = 6
 
@@ -190,7 +247,7 @@ class Bullet(Sprite):
         self.rect.left += self.speed
 
     def draw(self, renderer: Renderer) -> None:
-        renderer.draw(self.REGISTRY, self.src_rect, self.rect)
+        renderer.draw(SpriteRegistry.BULLET, self.src_rect, self.rect)
 
     def is_alive(self) -> bool:
         return self.alive
@@ -198,14 +255,13 @@ class Bullet(Sprite):
     def destroy(self) -> None:
         self.alive = False
 
-    def collide(self, other: Sprite) -> bool:
+    def collide(self, other: GameObject) -> bool:
         if self.is_alive() is False:
             return False
         return self.rect.colliderect(other.rect)
 
 
-class Craft(Sprite):
-    REGISTRY = 1
+class Craft(GameObject):
     WIDTH = 32
     HEIGHT = 24
 
@@ -320,7 +376,7 @@ class Craft(Sprite):
             self.explosion.draw(renderer)
             self.draw_bullets(renderer)
             return
-        renderer.draw(self.REGISTRY, self.frame.src, self.frame.collision)
+        renderer.draw(SpriteRegistry.CRAFT, self.frame.src, self.frame.collision)
         self.draw_bullets(renderer)
 
     def draw_bullets(self, renderer: Renderer):
@@ -334,17 +390,21 @@ class Craft(Sprite):
         self.alive = False
         self.explosion.rect.center = self.rect.center
 
-    def collide(self, other: Sprite) -> bool:
+    def collide(self, other: GameObject) -> bool:
         for b in self.bullets:
             if other.is_alive() and b.collide(other):
                 b.destroy()
                 return True
         return False
 
+    def killed(self, other: GameObject):
+        pass
 
-class Asteroid(Sprite):
-    REGISTRY = 3
+    def spawn(self) -> None:
+        self.alive = True
 
+
+class Asteroid(GameObject):
     def __init__(self, boundary: tuple):
         super().__init__()
         self.alive = True
@@ -377,7 +437,7 @@ class Asteroid(Sprite):
         if self.is_alive() is False:
             self.explosion.draw(renderer)
             return
-        renderer.draw(self.REGISTRY, self.src_rect, self.rect)
+        renderer.draw(SpriteRegistry.ASTEROID, self.src_rect, self.rect)
 
     def is_alive(self) -> bool:
         return self.alive
@@ -389,14 +449,28 @@ class Asteroid(Sprite):
             self.explosion.rect.center = self.rect.center
             post(Event(Engine.GAME_EVENT, gtype=Engine.ENEMY_DESTROYED, bonus=self.bonus))
 
-    def collide(self, other: Sprite) -> bool:
+    def collide(self, other: GameObject) -> bool:
         if self.is_alive() is False:
             return False
         return self.rect.colliderect(other.rect)
 
+    def powerup(self) -> Optional[PowerUp]:
+        pass
+
+
+class AsteroidWave(GameObject):
+
+    def __init__(self):
+        super().__init__()
+
+    def update(self, time: int) -> None:
+        pass
+
+    def draw(self, renderer: Renderer) -> None:
+        pass
+
 
 class FontSprite(Sprite):
-    REGISTRY = 5
     WIDTH = 12
     HEIGHT = 12
     CHAR_PER_ROW = 29
@@ -404,16 +478,13 @@ class FontSprite(Sprite):
     def __init__(self):
         super().__init__()
         self.letters: list = []
-        '''
-        self.chars = [' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.',
-                      '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=',
-                      '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-                      'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[',
-                      '\\', ']', '^', '_']
-        '''
-        self.chars = ['!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>',
-                      '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\',
-                      ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+        self.chars = ['!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+',
+                      ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6',
+                      '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A',
+                      'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+                      'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+                      'X', 'Y', 'Z', '[', '\\', ']', '^', '_', '`', 'a', 'b',
+                      'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
 
     def display(self, text: str) -> None:
         self.letters = [char for char in text]
@@ -426,5 +497,5 @@ class FontSprite(Sprite):
             x = (n % (self.CHAR_PER_ROW + 1)) * self.WIDTH
             src = Rect(x, y, self.WIDTH, self.HEIGHT)
             dest = Rect(cursor, 10, self.WIDTH, self.HEIGHT)
-            renderer.draw(self.REGISTRY, src, dest)
+            renderer.draw(SpriteRegistry.FONTS, src, dest)
             cursor += 8

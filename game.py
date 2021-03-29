@@ -1,6 +1,6 @@
 from engine import GameState, Engine
-from renderer import Renderer
-from sprites import Background, Craft, Bullet, Asteroid, Explosion, FontSprite
+from renderer import Renderer, SpriteRegistry
+from sprites import Background, Craft, Asteroid, FontSprite, PowerUp
 from controls import Input
 from pygame import Rect
 from pygame.event import Event
@@ -31,12 +31,13 @@ class LoadState(BaseState):
     def __init__(self, renderer: Renderer):
         super().__init__()
         self.renderer: Renderer = renderer
-        self.renderer.register_image(Background.REGISTRY, "assets/background.png")
-        self.renderer.register_image(Craft.REGISTRY, "assets/pxplayer.png")
-        self.renderer.register_image(Bullet.REGISTRY, "assets/bullets.png")
-        self.renderer.register_image(self.LEVEL_1_SPRITES, "assets/level1_sprites.png")
-        self.renderer.register_image(Explosion.REGISTRY, "assets/explosion.png")
-        self.renderer.register_image(FontSprite.REGISTRY, "assets/font.png")
+        self.renderer.register_image(SpriteRegistry.BACKGROUND, "assets/background.png")
+        self.renderer.register_image(SpriteRegistry.CRAFT, "assets/pxplayer.png")
+        self.renderer.register_image(SpriteRegistry.BULLET, "assets/bullets.png")
+        self.renderer.register_image(SpriteRegistry.ASTEROID, "assets/level1_sprites.png")
+        self.renderer.register_image(SpriteRegistry.EXPLOSION, "assets/explosion.png")
+        self.renderer.register_image(SpriteRegistry.FONTS, "assets/font.png")
+        self.renderer.register_image(SpriteRegistry.POWERUP, "assets/power-up.png")
         self.background: Background = Background()
         self.craft: Craft = Craft(renderer.bb_size)
 
@@ -67,7 +68,7 @@ class GetReadyState(BaseState):
     def draw(self, renderer: Renderer) -> None:
         self.background.draw(renderer)
         self.craft.draw(renderer)
-        self.renderer.draw(Bullet.REGISTRY, Rect(0, 64, 144, 32), Rect(100, 100, 144, 32))
+        self.renderer.draw(SpriteRegistry.BULLET, Rect(0, 64, 144, 32), Rect(100, 100, 144, 32))
         self.draw_score(renderer)
 
     def state(self) -> GameState:
@@ -85,6 +86,7 @@ class PlayState(BaseState):
         self.asteroids: list = []
         self.__asteroids_tick: int = 0
         self.__dead_tick: int = 0
+        self.__powerups: list = []
 
     def update(self, time: int, input: Input) -> None:
         self.background.update(time)
@@ -93,12 +95,14 @@ class PlayState(BaseState):
         self.generate_asteroids()
         self.update_asteroids(time)
         self.check_collision()
+        [powerup.update(time) for powerup in self.__powerups]
 
     def draw(self, renderer: Renderer) -> None:
         self.background.draw(renderer)
         self.draw_asteroids(renderer)
         self.craft.draw(renderer)
         self.draw_score(renderer)
+        [powerup.draw(renderer) for powerup in self.__powerups]
 
     def state(self) -> GameState:
         if self.craft.is_alive() is False:
@@ -128,5 +132,12 @@ class PlayState(BaseState):
         for a in self.asteroids:
             if self.craft.collide(a):
                 a.destroy()
+                powerup = PowerUp()
+                powerup.rect.center = a.rect.center
+                self.__powerups.append(powerup)
             if a.collide(self.craft):
                 self.craft.destroy()
+        for p in self.__powerups:
+            if p.collide(self.craft):
+                p.destroy()
+                self.__powerups.remove(p)
