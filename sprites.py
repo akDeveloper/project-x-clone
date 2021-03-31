@@ -8,6 +8,7 @@ from random import randint
 from engine import Engine
 from pygame.event import post, Event
 from typing import Optional
+from timer import Timer
 
 
 class GameObject(Sprite):
@@ -479,7 +480,7 @@ class Asteroid(GameObject):
     def __init__(self, boundary: tuple):
         super().__init__()
         self.alive = True
-        self.life = 1
+        self.life = 2
         self.explosion = Explosion()
         self.speed = randint(3, 5)
         self.bonus = self.speed
@@ -491,6 +492,10 @@ class Asteroid(GameObject):
         self.variants.append(Rect(147, 288, 61, 72))
         self.variants.append(Rect(208, 282, 109, 77))
         skin = randint(0, 4)
+        if skin > 1 and skin < 4:
+            self.life = 4
+        elif skin >= 4:
+            self.life = 6
         self.src_rect = self.variants[skin]
         self.rect = Rect(
             boundary[0],
@@ -531,14 +536,35 @@ class Asteroid(GameObject):
 
 class AsteroidWave(GameObject):
 
-    def __init__(self):
+    def __init__(self, boundary: tuple):
         super().__init__()
+        self.items: list = []
+        self.timer = Timer(300)
+        self.boundary: tuple = boundary
 
     def update(self, time: int) -> None:
-        pass
+        if self.timer.looped(time):
+            self.items.append(Asteroid(self.boundary))
+        for item in self.items:
+            item.update(time)
+            if item.rect.right < 0:
+                self.items.remove(item)
 
     def draw(self, renderer: Renderer) -> None:
-        pass
+        for item in self.items:
+            item.draw(renderer)
+
+    def collide(self, other: Craft) -> list:
+        hits: list = []
+        for item in self.items:
+            if other.collide(item):
+                item.destroy()
+                if item.is_alive() is False:
+                    hits.append(item)
+                    self.items.remove(item)
+            if item.collide(other):
+                other.destroy()
+        return hits
 
 
 class FontSprite(Sprite):

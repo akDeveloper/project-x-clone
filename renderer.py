@@ -56,5 +56,5 @@ class SdlRenderer(Renderer):
     def register_image(self, spr: SpriteRegistry, filepath: str) -> None:
         self.__images.insert(spr.value, image.load(filepath).convert_alpha())
 
-    def draw(self, spr: SpriteRegistry, src: Rect, dest: Rect) -> None:
-        self.__backbuffer.blit(self.__images[spr.value], dest, src)
+    def draw(self, spr: SpriteRegistry, src: Rect, dest: Rect, flags: int = 0) -> None:
+        self.__backbuffer.blit(self.__images[spr.value], dest, src, flags)

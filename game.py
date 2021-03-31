@@ -1,9 +1,10 @@
 from engine import GameState, Engine
 from renderer import Renderer, SpriteRegistry
-from sprites import Background, Craft, Asteroid, FontSprite, PowerUp
+from sprites import Background, Craft, AsteroidWave, FontSprite, PowerUp
 from controls import Input
 from pygame import Rect
 from pygame.event import Event
+from random import randint
 
 
 class BaseState(GameState):
@@ -83,7 +84,7 @@ class PlayState(BaseState):
         self.renderer: Renderer = state.renderer
         self.background: Background = state.background
         self.craft: Craft = state.craft
-        self.asteroids: list = []
+        self.asteroids: AsteroidWave = AsteroidWave(self.renderer.bb_size)
         self.__asteroids_tick: int = 0
         self.__dead_tick: int = 0
         self.__powerups: list = []
@@ -92,14 +93,13 @@ class PlayState(BaseState):
         self.background.update(time)
         self.craft.set_input(input)
         self.craft.update(time)
-        self.generate_asteroids()
-        self.update_asteroids(time)
+        self.asteroids.update(time)
         self.check_collision()
         [powerup.update(time) for powerup in self.__powerups]
 
     def draw(self, renderer: Renderer) -> None:
         self.background.draw(renderer)
-        self.draw_asteroids(renderer)
+        self.asteroids.draw(renderer)
         self.craft.draw(renderer)
         self.draw_score(renderer)
         [powerup.draw(renderer) for powerup in self.__powerups]
@@ -111,32 +111,13 @@ class PlayState(BaseState):
             self.__dead_tick += 1
         return self
 
-    def generate_asteroids(self) -> None:
-        if self.__asteroids_tick < 50:
-            self.__asteroids_tick += 1
-            return
-        self.asteroids.append(Asteroid(self.renderer.bb_size))
-        self.__asteroids_tick = 0
-
-    def update_asteroids(self, time) -> None:
-        for a in self.asteroids:
-            a.update(time)
-            if a.rect.right < 0:
-                self.asteroids.remove(a)
-
-    def draw_asteroids(self, renderer: Renderer):
-        for a in self.asteroids:
-            a.draw(renderer)
-
     def check_collision(self) -> None:
-        for a in self.asteroids:
-            if self.craft.collide(a):
-                a.destroy()
+        items = self.asteroids.collide(self.craft)
+        for item in items:
+            if randint(1, 20) == 3:
                 powerup = PowerUp()
-                powerup.rect.center = a.rect.center
+                powerup.rect.center = item.rect.center
                 self.__powerups.append(powerup)
-            if a.collide(self.craft):
-                self.craft.destroy()
         for p in self.__powerups:
             if p.collide(self.craft):
                 p.destroy()
