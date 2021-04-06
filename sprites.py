@@ -225,7 +225,7 @@ class Explosion(Sprite):
             action_frames.append(self.frames[13])
             action_frames.append(self.frames[14])
             action_frames.append(self.frames[15])
-            action_frames.append(self.frames[16])            
+            action_frames.append(self.frames[16])
         self.action = Action(action_frames)
         self.frame = action_frames[0]
 
@@ -321,7 +321,7 @@ class DiagUpBullet(Bullet):
             Frame(Rect(0, 0, 15, 14), Rect(289, 33, 15, 14), 1)
         )
 
-    def update(self, time: int) -> None:    
+    def update(self, time: int) -> None:
         self.rect.left += self.speed
         self.rect.top -= self.speed
         self.frame = self.action.next_frame()
@@ -444,11 +444,10 @@ class Craft(GameObject):
         for bullet in self.bullets:
             bullet.update(time)
             if bullet.rect.left > self.boundary[0] or bullet.rect.bottom < 0 \
-                    or bullet.rect.top > self.boundary[1]:
+                    or bullet.rect.top > self.boundary[1] or bullet.is_alive() is False:
                 self.bullets.remove(bullet)
             if isinstance(bullet, Explosion) and bullet.is_completed() is True:
                 self.bullets.remove(bullet)
-
 
     def shoot(self, time: int) -> None:
         ''' Add delay for each bullet shooting '''
@@ -456,7 +455,7 @@ class Craft(GameObject):
             self.shoot_tick += 1
             return
         self.shoot_tick = 0
-        blts = [Bullet()] # [Bullet(), DiagUpBullet(), DiagDownBullet()]
+        blts = [Bullet()]  # [Bullet(), DiagUpBullet(), DiagDownBullet()]
         for tmp in blts:
             self.bullets.append(tmp)
             tmp.align(self.rect)
