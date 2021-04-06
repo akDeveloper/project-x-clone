@@ -27,3 +27,6 @@ class Action(object):
     def reset(self) -> None:
         self.tick = 0
         self.index = 0
+
+    def is_completed(self) -> bool:
+        return self.index == (len(self.frames) - 1)

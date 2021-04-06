@@ -171,10 +171,11 @@ class PowerUp(Sprite):
 
 
 class Explosion(Sprite):
-    def __init__(self):
+    def __init__(self, action: int = 0, rect: Rect = None):
         super().__init__()
         self.alive = True
-        self.rect = Rect(0, 0, 32, 32)
+        self.rect = Rect(0, 0, 32, 32) if rect is None else rect
+        self.actions: list = []
         self.frame: Frame = None
         ''' Create frames '''
         self.frames: list = []
@@ -197,22 +198,34 @@ class Explosion(Sprite):
                 )
         ''' Setup actions '''
         action_frames: list = []
-        action_frames.append(self.frames[1])
-        action_frames.append(self.frames[2])
-        action_frames.append(self.frames[3])
-        action_frames.append(self.frames[4])
-        action_frames.append(self.frames[5])
-        action_frames.append(self.frames[6])
-        action_frames.append(self.frames[7])
-        action_frames.append(self.frames[8])
-        action_frames.append(self.frames[9])
-        action_frames.append(self.frames[0])
-        action_frames.append(self.frames[11])
-        action_frames.append(self.frames[12])
-        action_frames.append(self.frames[13])
-        action_frames.append(self.frames[14])
-        action_frames.append(self.frames[15])
-        action_frames.append(self.frames[16])
+        if action == 0:
+            action_frames.append(self.frames[1])
+            action_frames.append(self.frames[2])
+            action_frames.append(self.frames[3])
+            action_frames.append(self.frames[4])
+            action_frames.append(self.frames[5])
+            action_frames.append(self.frames[6])
+            action_frames.append(self.frames[7])
+            action_frames.append(self.frames[8])
+            action_frames.append(self.frames[9])
+            action_frames.append(self.frames[0])
+            action_frames.append(self.frames[11])
+            action_frames.append(self.frames[12])
+            action_frames.append(self.frames[13])
+            action_frames.append(self.frames[14])
+            action_frames.append(self.frames[15])
+            action_frames.append(self.frames[16])
+        else:
+            action_frames.append(self.frames[1])
+            action_frames.append(self.frames[2])
+            action_frames.append(self.frames[3])
+            action_frames.append(self.frames[4])
+            action_frames.append(self.frames[11])
+            action_frames.append(self.frames[12])
+            action_frames.append(self.frames[13])
+            action_frames.append(self.frames[14])
+            action_frames.append(self.frames[15])
+            action_frames.append(self.frames[16])            
         self.action = Action(action_frames)
         self.frame = action_frames[0]
 
@@ -231,6 +244,9 @@ class Explosion(Sprite):
 
     def collide(self, other: Sprite) -> bool:
         return False
+
+    def is_completed(self) -> bool:
+        return self.action.is_completed()
 
 
 class Bullet(GameObject):
@@ -305,7 +321,7 @@ class DiagUpBullet(Bullet):
             Frame(Rect(0, 0, 15, 14), Rect(289, 33, 15, 14), 1)
         )
 
-    def update(self, time: int) -> None:
+    def update(self, time: int) -> None:    
         self.rect.left += self.speed
         self.rect.top -= self.speed
         self.frame = self.action.next_frame()
@@ -428,8 +444,11 @@ class Craft(GameObject):
         for bullet in self.bullets:
             bullet.update(time)
             if bullet.rect.left > self.boundary[0] or bullet.rect.bottom < 0 \
-                    or bullet.rect.top > self.boundary[1] or bullet.is_alive() is False:
+                    or bullet.rect.top > self.boundary[1]:
                 self.bullets.remove(bullet)
+            if isinstance(bullet, Explosion) and bullet.is_completed() is True:
+                self.bullets.remove(bullet)
+
 
     def shoot(self, time: int) -> None:
         ''' Add delay for each bullet shooting '''
@@ -437,7 +456,7 @@ class Craft(GameObject):
             self.shoot_tick += 1
             return
         self.shoot_tick = 0
-        blts = [Bullet(), DiagUpBullet(), DiagDownBullet()]
+        blts = [Bullet()] # [Bullet(), DiagUpBullet(), DiagDownBullet()]
         for tmp in blts:
             self.bullets.append(tmp)
             tmp.align(self.rect)
@@ -466,6 +485,7 @@ class Craft(GameObject):
         for b in self.bullets:
             if other.is_alive() and b.collide(other):
                 b.destroy()
+                self.bullets.append(Explosion(1, other.rect))
                 return True
         return False
 
@@ -541,6 +561,7 @@ class AsteroidWave(GameObject):
         self.items: list = []
         self.timer = Timer(300)
         self.boundary: tuple = boundary
+
 
     def update(self, time: int) -> None:
         if self.timer.looped(time):
