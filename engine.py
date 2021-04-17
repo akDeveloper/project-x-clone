@@ -5,6 +5,8 @@ from pygame.time import Clock
 from pygame.event import get, Event
 from controls import Controller, Input
 from pygame import USEREVENT
+from sound_manager import SoundManager
+from pygame.mouse import set_visible
 
 
 class GameState(object):
@@ -29,12 +31,16 @@ class Engine():
     GAME_EVENT = USEREVENT + 1
     CRAFT_SHOOTED = 0
     ENEMY_DESTROYED = 1
+    PLAYER_DESTROYED = 2
 
     def __init__(self, renderer: Renderer):
         self.__renderer: Renderer = renderer
         self.__run = True
         self.controller = Controller()
         self.score = 0
+        self.sound = SoundManager()
+        self.sound.start_music()
+        set_visible(False)
 
     def on_event(self, e: Event) -> None:
         if e.type == QUIT:
@@ -64,7 +70,7 @@ class Engine():
         while(self.__run is True):
             for event in get():
                 if event.type == self.GAME_EVENT:
-                    state.on_event(event)
+                    state.on_event(event, self.sound)
                     continue
                 self.on_event(event)
             self.controller.on_event()

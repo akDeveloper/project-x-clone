@@ -477,13 +477,19 @@ class Craft(GameObject):
         return self.alive
 
     def destroy(self) -> None:
-        self.alive = False
-        self.explosion.rect.center = self.rect.center
+        if self.alive is True:
+            self.alive = False
+            self.explosion.rect.center = self.rect.center
+            post(Event(Engine.GAME_EVENT, gtype=Engine.PLAYER_DESTROYED))
 
     def collide(self, other: GameObject) -> bool:
         for b in self.bullets:
             if other.is_alive() and b.collide(other):
                 b.destroy()
+                # Append the explosion sprite for bullet that was hit
+                # Pass by ref the rect of objet that the bullet has hit
+                # so eplosion of bullet can follow the object if it is
+                # still alive.
                 self.bullets.append(Explosion(1, other.rect))
                 return True
         return False
@@ -496,13 +502,13 @@ class Craft(GameObject):
 
 
 class Asteroid(GameObject):
-    def __init__(self, boundary: tuple):
+    def __init__(self, boundary: tuple, skin: int = None):
         super().__init__()
         self.alive = True
         self.life = 2
         self.explosion = Explosion()
         self.speed = randint(3, 5)
-        self.bonus = self.speed
+        self.points = self.speed
         self.variants: list = []
         self.variants.append(Rect(145, 130, 30, 36))
         self.variants.append(Rect(146, 170, 30, 29))
@@ -510,7 +516,7 @@ class Asteroid(GameObject):
         self.variants.append(Rect(240, 225, 48, 53))
         self.variants.append(Rect(147, 288, 61, 72))
         self.variants.append(Rect(208, 282, 109, 77))
-        skin = randint(0, 4)
+        skin = randint(0, 4) if skin is None else skin
         if skin > 1 and skin < 4:
             self.life = 4
         elif skin >= 4:
@@ -518,7 +524,7 @@ class Asteroid(GameObject):
         self.src_rect = self.variants[skin]
         self.rect = Rect(
             boundary[0],
-            randint(0, boundary[1] - self.src_rect.height),
+            randint(-self.src_rect.height, boundary[1] - self.src_rect.height),
             self.src_rect.width,
             self.src_rect.height)
 
@@ -539,10 +545,10 @@ class Asteroid(GameObject):
 
     def destroy(self) -> None:
         self.life -= 1
+        post(Event(Engine.GAME_EVENT, gtype=Engine.ENEMY_DESTROYED, points=self.points))
         if self.life <= 0:
             self.alive = False
             self.explosion.rect.center = self.rect.center
-            post(Event(Engine.GAME_EVENT, gtype=Engine.ENEMY_DESTROYED, bonus=self.bonus))
 
     def collide(self, other: GameObject) -> bool:
         if self.is_alive() is False:
@@ -561,10 +567,9 @@ class AsteroidWave(GameObject):
         self.timer = Timer(300)
         self.boundary: tuple = boundary
 
-
     def update(self, time: int) -> None:
         if self.timer.looped(time):
-            self.items.append(Asteroid(self.boundary))
+            self.items.append(Asteroid(self.boundary, 1))
         for item in self.items:
             item.update(time)
             if item.rect.right < 0:
@@ -575,8 +580,9 @@ class AsteroidWave(GameObject):
             item.draw(renderer)
 
     def collide(self, other: Craft) -> list:
-        hits: list = []
+        hits: list = []  # How many asteroids were hit
         for item in self.items:
+            ''' When asteroid collide with bullet of Craft '''
             if other.collide(item):
                 item.destroy()
                 if item.is_alive() is False:

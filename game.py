@@ -5,6 +5,7 @@ from controls import Input
 from pygame import Rect
 from pygame.event import Event
 from random import randint
+from sound_manager import SoundManager
 
 
 class BaseState(GameState):
@@ -12,12 +13,15 @@ class BaseState(GameState):
         self.score: int = score
         self.font: FontSprite = FontSprite()
 
-    def on_event(self, e: Event) -> None:
+    def on_event(self, e: Event, sound: SoundManager) -> None:
         if e.gtype == Engine.CRAFT_SHOOTED:
-            pass  # Play sound
+            sound.play(SoundManager.FIRE)  # Play sound
         elif e.gtype == Engine.ENEMY_DESTROYED:
             ''' play sound, increase score '''
-            self.score += e.bonus
+            sound.play(SoundManager.EXPLODE)
+            self.score += e.points
+        elif e.gtype == Engine.PLAYER_DESTROYED:
+            sound.play(SoundManager.PLAYER_EXPLODE)
 
     def draw_score(self, renderer: Renderer) -> None:
         word = str(self.score)
@@ -80,12 +84,11 @@ class GetReadyState(BaseState):
 
 class PlayState(BaseState):
     def __init__(self, state: GetReadyState, score: int):
-        super().__init__()
+        super().__init__(score)
         self.renderer: Renderer = state.renderer
         self.background: Background = state.background
         self.craft: Craft = state.craft
         self.asteroids: AsteroidWave = AsteroidWave(self.renderer.bb_size)
-        self.__asteroids_tick: int = 0
         self.__dead_tick: int = 0
         self.__powerups: list = []
 
