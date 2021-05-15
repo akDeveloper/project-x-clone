@@ -39,7 +39,7 @@ class Engine():
         self.controller = Controller()
         self.score = 0
         self.sound = SoundManager()
-        self.sound.start_music()
+        self.sound.start_music(-1)
         set_visible(False)
 
     def on_event(self, e: Event) -> None:
