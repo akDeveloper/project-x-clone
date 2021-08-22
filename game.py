@@ -125,3 +125,4 @@ class PlayState(BaseState):
             if p.collide(self.craft):
                 p.destroy()
                 self.__powerups.remove(p)
+                self.craft.power_up(p)

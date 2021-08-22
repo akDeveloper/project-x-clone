@@ -133,13 +133,13 @@ class PowerUp(Sprite):
         self.alive = True
         self.rect = Rect(0, 0, self.WIDTH, self.HEIGHT)
         variants: list = []
-        variants.append(Rect(0, 0, self.WIDTH, self.HEIGHT))  # Build power
-        variants.append(Rect(24, 0, self.WIDTH, self.HEIGHT))  # Extra bullet
-        variants.append(Rect(48, 0, self.WIDTH, self.HEIGHT))  # Rockets
-        variants.append(Rect(72, 0, self.WIDTH, self.HEIGHT))  # Shield
-        variants.append(Rect(96, 0, self.WIDTH, self.HEIGHT))  # Extra speed
-        skin = randint(0, 4)
-        self.src = variants[skin]
+        variants.append(Rect(0, 0, self.WIDTH, self.HEIGHT))  # Build power (0)
+        variants.append(Rect(24, 0, self.WIDTH, self.HEIGHT))  # Extra bullet (1)
+        variants.append(Rect(48, 0, self.WIDTH, self.HEIGHT))  # Rockets (2)
+        variants.append(Rect(72, 0, self.WIDTH, self.HEIGHT))  # Shield (3)
+        variants.append(Rect(96, 0, self.WIDTH, self.HEIGHT))  # Extra speed (4)
+        self.skin = randint(0, 4)
+        self.src = variants[self.skin]
         self.vY = -10
 
     def update(self, time: int) -> None:
@@ -362,6 +362,7 @@ class Craft(GameObject):
         self.bullets: list = []
         self.shoot_tick: int = 0
         self.frame: Frame = None
+        self.__powerups: list = []
         ''' Setup frames '''
         self.frames: list = []
         self.actions: list = []
@@ -440,7 +441,7 @@ class Craft(GameObject):
             self.shoot(time)
         self.update_bullets(time)
 
-    def update_bullets(self, time: int):
+    def update_bullets(self, time: int) -> None:
         for bullet in self.bullets:
             bullet.update(time)
             if bullet.rect.left > self.boundary[0] or bullet.rect.bottom < 0 \
@@ -449,17 +450,26 @@ class Craft(GameObject):
             if isinstance(bullet, Explosion) and bullet.is_completed() is True:
                 self.bullets.remove(bullet)
 
+    def power_up(self, item: PowerUp) -> None:
+        self.__powerups.append(item)
+
     def shoot(self, time: int) -> None:
         ''' Add delay for each bullet shooting '''
         if self.shoot_tick < 5 and len(self.bullets) > 0:
             self.shoot_tick += 1
             return
         self.shoot_tick = 0
-        blts = [Bullet()]  # [Bullet(), DiagUpBullet(), DiagDownBullet()]
+        blts = self.__get_bullets()
         for tmp in blts:
             self.bullets.append(tmp)
             tmp.align(self.rect)
         post(Event(Engine.GAME_EVENT, gtype=Engine.CRAFT_SHOOTED))
+
+    def __get_bullets(self) -> list:
+        for power in self.__powerups:
+            if power.skin == 0:
+                return [Bullet(), DiagUpBullet(), DiagDownBullet()]
+        return [Bullet()]
 
     def draw(self, renderer: Renderer) -> None:
         if self.is_alive() is False:
