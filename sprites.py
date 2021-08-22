@@ -127,6 +127,11 @@ class Background(Sprite):
 class PowerUp(Sprite):
     WIDTH = 24
     HEIGHT = 19
+    BUILD_POWER = 0
+    EXTRA_BULLET = 1
+    ROCKETS = 2
+    SHIELD = 3
+    EXTRA_SPEED = 4
 
     def __init__(self):
         super().__init__()
@@ -363,6 +368,7 @@ class Craft(GameObject):
         self.shoot_tick: int = 0
         self.frame: Frame = None
         self.__powerups: list = []
+        self.__max_bullets: int = 3
         ''' Setup frames '''
         self.frames: list = []
         self.actions: list = []
@@ -450,10 +456,16 @@ class Craft(GameObject):
             if isinstance(bullet, Explosion) and bullet.is_completed() is True:
                 self.bullets.remove(bullet)
 
-    def power_up(self, item: PowerUp) -> None:
+    def power_up(self, item: int) -> None:
+        if (item == PowerUp.EXTRA_BULLET):
+            self.__max_bullets += 1
+        if (item == PowerUp.EXTRA_SPEED):
+            self.speed += 1
         self.__powerups.append(item)
 
     def shoot(self, time: int) -> None:
+        if len(self.bullets) >= self.__max_bullets:
+            return
         ''' Add delay for each bullet shooting '''
         if self.shoot_tick < 5 and len(self.bullets) > 0:
             self.shoot_tick += 1
@@ -467,7 +479,7 @@ class Craft(GameObject):
 
     def __get_bullets(self) -> list:
         for power in self.__powerups:
-            if power.skin == 0:
+            if power == 0:
                 return [Bullet(), DiagUpBullet(), DiagDownBullet()]
         return [Bullet()]
 

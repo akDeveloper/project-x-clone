@@ -31,7 +31,6 @@ class BaseState(GameState):
 
 
 class LoadState(BaseState):
-    LEVEL_1_SPRITES = 3
 
     def __init__(self, renderer: Renderer):
         super().__init__()
@@ -117,7 +116,7 @@ class PlayState(BaseState):
     def check_collision(self) -> None:
         items = self.asteroids.collide(self.craft)
         for item in items:
-            if randint(1, 20) == 3:
+            if randint(1, 5) == 3:
                 powerup = PowerUp()
                 powerup.rect.center = item.rect.center
                 self.__powerups.append(powerup)
@@ -125,4 +124,4 @@ class PlayState(BaseState):
             if p.collide(self.craft):
                 p.destroy()
                 self.__powerups.remove(p)
-                self.craft.power_up(p)
+                self.craft.power_up(p.skin)
