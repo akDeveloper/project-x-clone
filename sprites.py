@@ -10,6 +10,10 @@ from pygame.event import post, Event
 from typing import Optional
 from timer import Timer
 
+class GameEvent:
+    CRAFT_SHOOTED = 0
+    ENEMY_DESTROYED = 1
+    PLAYER_DESTROYED = 2  
 
 class GameObject(Sprite):
     def spawn(self) -> None:
@@ -475,7 +479,7 @@ class Craft(GameObject):
         for tmp in blts:
             self.bullets.append(tmp)
             tmp.align(self.rect)
-        post(Event(Engine.GAME_EVENT, gtype=Engine.CRAFT_SHOOTED))
+        post(Event(Engine.GAME_EVENT, gtype=GameEvent.CRAFT_SHOOTED))
 
     def __get_bullets(self) -> list:
         for power in self.__powerups:
@@ -502,7 +506,7 @@ class Craft(GameObject):
         if self.alive is True:
             self.alive = False
             self.explosion.rect.center = self.rect.center
-            post(Event(Engine.GAME_EVENT, gtype=Engine.PLAYER_DESTROYED))
+            post(Event(Engine.GAME_EVENT, gtype=GameEvent.PLAYER_DESTROYED))
 
     def collide(self, other: GameObject) -> bool:
         for b in self.bullets:
@@ -567,7 +571,7 @@ class Asteroid(GameObject):
 
     def destroy(self) -> None:
         self.life -= 1
-        post(Event(Engine.GAME_EVENT, gtype=Engine.ENEMY_DESTROYED, points=self.points))
+        post(Event(Engine.GAME_EVENT, gtype=GameEvent.ENEMY_DESTROYED, points=self.points))
         if self.life <= 0:
             self.alive = False
             self.explosion.rect.center = self.rect.center

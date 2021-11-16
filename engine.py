@@ -29,9 +29,6 @@ class GameState(object):
 class Engine():
     FPS = 30
     GAME_EVENT = USEREVENT + 1
-    CRAFT_SHOOTED = 0
-    ENEMY_DESTROYED = 1
-    PLAYER_DESTROYED = 2
 
     def __init__(self, renderer: Renderer):
         self.__renderer: Renderer = renderer
