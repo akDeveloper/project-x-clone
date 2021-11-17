@@ -1,4 +1,4 @@
-from engine import GameState, Engine
+from engine import GameState
 from renderer import Renderer, SpriteRegistry
 from sprites import Background, Craft, AsteroidWave, FontSprite, PowerUp, GameEvent
 from controls import Input
