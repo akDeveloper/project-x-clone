@@ -1,5 +1,13 @@
 # Project-X Clone
 
+## Usage
+
+Use arrow keys to navigate.
+
+Press 'S' key to shoot.
+
+Collect "P" power up to enchance weapons.
+
 ## Credits
 
 Backgrounds from [MGG](https://www.gamedevmarket.net/asset/pixelart-game-backgrounds/)
